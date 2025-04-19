@@ -144,11 +144,16 @@ const Dashboard = () => {
 
         setItems(sorted);
         setLoading(false);
-      } catch (err: any) {
-        console.error(
-          "❌ Bungie API Error:",
-          err.response?.data ?? err.message ?? err.toString()
-        );
+      } catch (err: unknown) {
+        if (err && typeof err === "object" && "response" in err) {
+          const e = err as { response?: { data?: any }; message?: string };
+          console.error(
+            "❌ Bungie API Error:",
+            e.response?.data ?? e.message ?? err
+          );
+        } else {
+          console.error("❌ Bungie API Error:", err);
+        }
         setLoading(false);
       }
     };
