@@ -15,9 +15,5 @@ export const getBungieConfig = () => {
 };
 
 export const getBungieApiKey = () => {
-  return process.env.NODE_ENV === "development"
-    ? process.env.NEXT_PUBLIC_BUNGIE_API_KEY_LOCAL
-    : process.env.NEXT_PUBLIC_BUNGIE_API_KEY;
+  return process.env.NEXT_PUBLIC_BUNGIE_API_KEY;
 };
-
-console.log("Using API key:", getBungieApiKey());
