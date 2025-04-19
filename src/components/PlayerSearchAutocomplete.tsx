@@ -15,10 +15,9 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import axios from "axios";
+import axios, { CancelTokenSource } from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getBungieApiKey } from "@/lib/bungie";
-import type { CancelTokenSource } from "axios";
 
 type GuardianOption = {
   displayName: string;
@@ -74,6 +73,7 @@ const PlayerSearchAutocomplete = ({
 
   const searchGuardians = useMemo(() => {
     let cancelToken: CancelTokenSource | null = null;
+
     return async (query: string) => {
       if (!query || query.length < 3) {
         setOptions([]);
@@ -81,6 +81,7 @@ const PlayerSearchAutocomplete = ({
       }
 
       setShowSkeleton(true);
+
       try {
         if (cancelToken) cancelToken.cancel();
         cancelToken = axios.CancelToken.source();
@@ -89,14 +90,14 @@ const PlayerSearchAutocomplete = ({
 
         const users = res.data.Response.searchResults;
 
-        const found: GuardianOption[] = await Promise.all(
+        const found = await Promise.all(
           users.map(
             async (user: {
               destinyMemberships: DestinyMembership[];
               bungieGlobalDisplayName?: string;
               bungieGlobalDisplayNameCode?: number;
               iconPath?: string;
-            }) => {
+            }): Promise<GuardianOption | null> => {
               const primary =
                 user.destinyMemberships.find(
                   (m: DestinyMembership) => m.isCrossSavePrimary === true
@@ -113,12 +114,7 @@ const PlayerSearchAutocomplete = ({
 
               try {
                 const profileRes = await axios.get(
-                  `https://www.bungie.net/Platform/Destiny2/${primary.membershipType}/Profile/${primary.membershipId}/?components=100,200`,
-                  {
-                    headers: {
-                      "X-API-Key": getBungieApiKey(),
-                    },
-                  }
+                  `/api/getProfile?membershipId=${primary.membershipId}&membershipType=${primary.membershipType}`
                 );
 
                 const charactersData = Object.values(
@@ -155,7 +151,7 @@ const PlayerSearchAutocomplete = ({
           )
         );
 
-        setOptions(found.filter(Boolean));
+        setOptions(found.filter((u): u is GuardianOption => Boolean(u)));
       } catch (err) {
         if (!axios.isCancel(err)) console.error("Search error:", err);
       } finally {
