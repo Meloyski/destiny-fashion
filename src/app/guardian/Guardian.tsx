@@ -125,61 +125,69 @@ const GuardianPage = () => {
           const items = equipped[id]?.items ?? [];
           const resolvedArmor: ArmorItem[] = await Promise.all(
             items
-              .filter((item: any) => armorBuckets.includes(item.bucketHash))
-              .map(async (item: any) => {
-                const itemDef = await getItemDefinition(item.itemHash);
-                const socketData =
-                  sockets?.[item.itemInstanceId]?.sockets ?? [];
+              .filter((item: { bucketHash: number }) =>
+                armorBuckets.includes(item.bucketHash)
+              )
+              .map(
+                async (item: {
+                  itemHash: number;
+                  itemInstanceId: string;
+                  bucketHash: number;
+                }) => {
+                  const itemDef = await getItemDefinition(item.itemHash);
+                  const socketData =
+                    sockets?.[item.itemInstanceId]?.sockets ?? [];
 
-                let shaderPlug = null;
-                let ornamentPlug = null;
+                  let shaderPlug = null;
+                  let ornamentPlug = null;
 
-                for (const socket of socketData) {
-                  const plug = await getSocketPlug(socket.plugHash);
-                  const cat = plug?.plug?.plugCategoryIdentifier;
-                  const display = plug?.itemTypeDisplayName;
+                  for (const socket of socketData) {
+                    const plug = await getSocketPlug(socket.plugHash);
+                    const cat = plug?.plug?.plugCategoryIdentifier;
+                    const display = plug?.itemTypeDisplayName;
 
-                  if (!shaderPlug && cat?.includes("shader")) {
-                    shaderPlug = plug;
+                    if (!shaderPlug && cat?.includes("shader")) {
+                      shaderPlug = plug;
+                    }
+
+                    if (
+                      !ornamentPlug &&
+                      (cat?.includes("skins") || display?.includes("Ornament"))
+                    ) {
+                      ornamentPlug = plug;
+                    }
                   }
 
-                  if (
-                    !ornamentPlug &&
-                    (cat?.includes("skins") || display?.includes("Ornament"))
-                  ) {
-                    ornamentPlug = plug;
-                  }
+                  return {
+                    itemHash: item.itemHash,
+                    itemInstanceId: item.itemInstanceId,
+                    name:
+                      ornamentPlug?.displayProperties?.name &&
+                      ornamentPlug.displayProperties.name !== "Default Ornament"
+                        ? ornamentPlug.displayProperties.name
+                        : itemDef?.displayProperties?.name ?? "Unknown Item",
+                    baseName: ornamentPlug
+                      ? itemDef?.displayProperties?.name
+                      : null,
+                    type: itemDef?.itemTypeDisplayName ?? "Armor",
+                    icon: `https://www.bungie.net${
+                      ornamentPlug?.displayProperties?.icon &&
+                      ornamentPlug.displayProperties.name !== "Default Ornament"
+                        ? ornamentPlug.displayProperties.icon
+                        : itemDef?.displayProperties?.icon ?? ""
+                    }`,
+                    shaderName: shaderPlug?.displayProperties?.name ?? null,
+                    shaderIcon: shaderPlug?.displayProperties?.icon
+                      ? `https://www.bungie.net${shaderPlug.displayProperties.icon}`
+                      : null,
+                    ornamentName: ornamentPlug?.displayProperties?.name ?? null,
+                    ornamentIcon: ornamentPlug?.displayProperties?.icon
+                      ? `https://www.bungie.net${ornamentPlug.displayProperties.icon}`
+                      : null,
+                    tier: itemDef?.inventory?.tierType ?? 0,
+                  };
                 }
-
-                return {
-                  itemHash: item.itemHash,
-                  itemInstanceId: item.itemInstanceId,
-                  name:
-                    ornamentPlug?.displayProperties?.name &&
-                    ornamentPlug.displayProperties.name !== "Default Ornament"
-                      ? ornamentPlug.displayProperties.name
-                      : itemDef?.displayProperties?.name ?? "Unknown Item",
-                  baseName: ornamentPlug
-                    ? itemDef?.displayProperties?.name
-                    : null,
-                  type: itemDef?.itemTypeDisplayName ?? "Armor",
-                  icon: `https://www.bungie.net${
-                    ornamentPlug?.displayProperties?.icon &&
-                    ornamentPlug.displayProperties.name !== "Default Ornament"
-                      ? ornamentPlug.displayProperties.icon
-                      : itemDef?.displayProperties?.icon ?? ""
-                  }`,
-                  shaderName: shaderPlug?.displayProperties?.name ?? null,
-                  shaderIcon: shaderPlug?.displayProperties?.icon
-                    ? `https://www.bungie.net${shaderPlug.displayProperties.icon}`
-                    : null,
-                  ornamentName: ornamentPlug?.displayProperties?.name ?? null,
-                  ornamentIcon: ornamentPlug?.displayProperties?.icon
-                    ? `https://www.bungie.net${ornamentPlug.displayProperties.icon}`
-                    : null,
-                  tier: itemDef?.inventory?.tierType ?? 0,
-                };
-              })
+              )
           );
 
           const raceGender = `${RACE_TYPES[data.raceType]} ${
