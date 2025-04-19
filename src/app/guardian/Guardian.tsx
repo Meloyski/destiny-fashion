@@ -19,7 +19,6 @@ import {
   getSocketPlug,
   preloadManifest,
 } from "@/lib/manifestCache";
-import { getBungieApiKey } from "@/lib/bungie";
 import Logo from "@/components/Logo";
 import PlayerSearchAutocomplete from "@/components/PlayerSearchAutocomplete";
 
