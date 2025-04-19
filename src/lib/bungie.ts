@@ -1,19 +1,7 @@
-export const getBungieConfig = () => {
-  const isProd = process.env.NODE_ENV === "production";
+export const getBungieConfig = () => ({
+  clientId: process.env.BUNGIE_CLIENT_ID,
+  clientSecret: process.env.BUNGIE_CLIENT_SECRET,
+  redirectUri: process.env.BUNGIE_REDIRECT_URI,
+});
 
-  return {
-    clientId: isProd
-      ? process.env.BUNGIE_CLIENT_ID
-      : process.env.BUNGIE_CLIENT_ID_LOCAL,
-    clientSecret: isProd
-      ? process.env.BUNGIE_CLIENT_SECRET
-      : process.env.BUNGIE_CLIENT_SECRET_LOCAL,
-    redirectUri: isProd
-      ? process.env.BUNGIE_REDIRECT_URI
-      : process.env.BUNGIE_REDIRECT_URI_LOCAL,
-  };
-};
-
-export const getBungieApiKey = () => {
-  return process.env.NEXT_PUBLIC_BUNGIE_API_KEY;
-};
+export const getBungieApiKey = () => process.env.NEXT_PUBLIC_BUNGIE_API_KEY;
