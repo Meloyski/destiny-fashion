@@ -1,20 +1,14 @@
-"use client";
+import { Container } from "@mui/material";
+import PlayerSearchAutocomplete from "@/components/PlayerSearchAutocomplete";
+import Logo from "@/components/Logo";
 
-import { Button, Container, Typography } from "@mui/material";
-
-type HomeProps = {};
-
-const Home = (props: HomeProps) => {
+const HomePage = () => {
   return (
-    <Container sx={{ mt: 8 }}>
-      <Typography variant="h4" gutterBottom>
-        Destiny Fashion
-      </Typography>
-      <Button variant="contained" href="/api/bungie/login">
-        Sign in with Bungie
-      </Button>
+    <Container maxWidth="xs" sx={{ mt: 6 }}>
+      <Logo />
+      <PlayerSearchAutocomplete />
     </Container>
   );
 };
 
-export default Home;
+export default HomePage;

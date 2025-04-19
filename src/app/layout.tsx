@@ -1,25 +1,33 @@
-import ThemeRegistry from "@/components/ThemeRegistry";
-import { Roboto } from "next/font/google";
+"use client";
 
-const roboto = Roboto({
+import { CssBaseline, ThemeProvider } from "@mui/material";
+import theme from "@/theme";
+import { DM_Sans } from "next/font/google";
+
+import { loadManifest } from "@/lib/manifestCache";
+
+loadManifest()
+  .then(() => console.log("✅ Manifest preloaded"))
+  .catch((err) => console.error("❌ Manifest failed to preload", err));
+
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
-
-export const metadata = {
-  title: "Destiny Fashion",
-  description: "Explore and share Destiny fashion loadouts",
-};
 
 type RootLayoutProps = {
   children: React.ReactNode;
 };
 
-const RootLayout = async ({ children }: RootLayoutProps) => {
+const RootLayout = ({ children }: RootLayoutProps) => {
   return (
     <html lang="en">
-      <body className={roboto.className}>
-        <ThemeRegistry>{children}</ThemeRegistry>
+      <body className={dmSans.className}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
