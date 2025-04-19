@@ -1,10 +1,17 @@
 import { Box, Link } from "@mui/material";
+import Image from "next/image";
 
 const Logo = () => {
   return (
-    <Link href="/">
+    <Link href="/" underline="none">
       <Box sx={{ mb: 2 }}>
-        <img width="100%" src="./df-color.svg" />
+        <Image
+          src="/df-color.svg"
+          alt="Destiny Fashion logo"
+          width={200}
+          height={60}
+          style={{ width: "100%", height: "auto" }}
+        />
       </Box>
     </Link>
   );
