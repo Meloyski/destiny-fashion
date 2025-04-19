@@ -85,17 +85,7 @@ const PlayerSearchAutocomplete = ({
         if (cancelToken) cancelToken.cancel();
         cancelToken = axios.CancelToken.source();
 
-        const res = await axios.post(
-          "https://www.bungie.net/Platform/User/Search/GlobalName/0/",
-          { displayNamePrefix: query },
-          {
-            headers: {
-              "X-API-Key": getBungieApiKey(),
-              "Content-Type": "application/json",
-            },
-            cancelToken: cancelToken.token,
-          }
-        );
+        const res = await axios.post("/api/searchGuardian", { query });
 
         const users = res.data.Response.searchResults;
 
