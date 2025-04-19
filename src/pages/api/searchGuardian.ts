@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { getBungieApiKey } from "@/lib/bungie";
 
 export default async function handler(
@@ -25,10 +25,11 @@ export default async function handler(
     );
 
     return res.status(200).json(response.data);
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as AxiosError;
     console.error(
       "❌ Bungie Search API failed:",
-      error.response?.data || error.message
+      err.response?.data || err.message
     );
     return res.status(500).json({ error: "Failed to search Bungie users" });
   }
