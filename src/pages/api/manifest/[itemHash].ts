@@ -2,7 +2,22 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import { getBungieApiKey } from "@/lib/bungie";
 
-let itemDefs: Record<string, any> | null = null;
+type DestinyItemDefinition = {
+  displayProperties?: {
+    name?: string;
+    icon?: string;
+  };
+  itemTypeDisplayName?: string;
+  plug?: {
+    plugCategoryIdentifier?: string;
+  };
+  inventory?: {
+    tierType?: number;
+  };
+  [key: string]: unknown;
+};
+
+let itemDefs: Record<string, DestinyItemDefinition> | null = null;
 
 const loadManifest = async () => {
   if (itemDefs) return;
@@ -61,8 +76,8 @@ export default async function handler(
     }
 
     return res.status(200).json(item);
-  } catch (err: any) {
-    console.error("❌ Manifest API error:", err.message);
-    return res.status(500).json({ error: "Failed to load manifest" });
+  } catch (err: unknown) {
+    const error = err as { message?: string };
+    console.error("❌ Manifest API error:", error.message ?? err);
   }
 }

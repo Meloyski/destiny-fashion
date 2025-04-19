@@ -18,6 +18,7 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getBungieApiKey } from "@/lib/bungie";
+import type { CancelTokenSource } from "axios";
 
 type GuardianOption = {
   displayName: string;
@@ -30,6 +31,18 @@ type GuardianOption = {
 
 type PlayerSearchAutocompleteProps = {
   defaultValueFromQuery?: boolean;
+};
+
+type CharacterSummary = {
+  emblemPath: string;
+  dateLastPlayed: string;
+};
+
+type DestinyMembership = {
+  isCrossSavePrimary?: boolean;
+  membershipId: string;
+  membershipType: number;
+  iconPath?: string;
 };
 
 const formatTimeAgo = (dateString: string) => {
@@ -55,13 +68,12 @@ const PlayerSearchAutocomplete = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [options, setOptions] = useState<GuardianOption[]>([]);
   const [defaultValue, setDefaultValue] = useState<GuardianOption | null>(null);
-  const [loading, setLoading] = useState(false);
   const [showSkeleton, setShowSkeleton] = useState(false);
   const [open, setOpen] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const searchGuardians = useMemo(() => {
-    let cancelToken: any;
+    let cancelToken: CancelTokenSource | null = null;
     return async (query: string) => {
       if (!query || query.length < 3) {
         setOptions([]);
@@ -69,7 +81,6 @@ const PlayerSearchAutocomplete = ({
       }
 
       setShowSkeleton(true);
-      setLoading(true);
       try {
         if (cancelToken) cancelToken.cancel();
         cancelToken = axios.CancelToken.source();
@@ -89,61 +100,69 @@ const PlayerSearchAutocomplete = ({
         const users = res.data.Response.searchResults;
 
         const found: GuardianOption[] = await Promise.all(
-          users.map(async (user: any) => {
-            const primary =
-              user.destinyMemberships.find((m: any) => m.isCrossSavePrimary) ??
-              user.destinyMemberships[0];
+          users.map(
+            async (user: {
+              destinyMemberships: DestinyMembership[];
+              bungieGlobalDisplayName?: string;
+              bungieGlobalDisplayNameCode?: number;
+              iconPath?: string;
+            }) => {
+              const primary =
+                user.destinyMemberships.find(
+                  (m: DestinyMembership) => m.isCrossSavePrimary === true
+                ) ?? user.destinyMemberships[0];
 
-            if (!primary) return null;
+              if (!primary) return null;
 
-            const baseName = user.bungieGlobalDisplayName ?? "Unknown";
-            const displayTag = `#${
-              user.bungieGlobalDisplayNameCode?.toString().padStart(4, "0") ??
-              "0000"
-            }`;
-            const displayName = `${baseName}${displayTag}`;
+              const baseName = user.bungieGlobalDisplayName ?? "Unknown";
+              const displayTag = `#${
+                user.bungieGlobalDisplayNameCode?.toString().padStart(4, "0") ??
+                "0000"
+              }`;
+              const displayName = `${baseName}${displayTag}`;
 
-            try {
-              const profileRes = await axios.get(
-                `https://www.bungie.net/Platform/Destiny2/${primary.membershipType}/Profile/${primary.membershipId}/?components=100,200`,
-                {
-                  headers: {
-                    "X-API-Key": getBungieApiKey(),
-                  },
-                }
-              );
+              try {
+                const profileRes = await axios.get(
+                  `https://www.bungie.net/Platform/Destiny2/${primary.membershipType}/Profile/${primary.membershipId}/?components=100,200`,
+                  {
+                    headers: {
+                      "X-API-Key": getBungieApiKey(),
+                    },
+                  }
+                );
 
-              const charactersData = Object.values(
-                profileRes.data.Response?.characters?.data ?? {}
-              ) as { emblemPath: string; dateLastPlayed: string }[];
+                const charactersData = Object.values(
+                  profileRes.data.Response?.characters?.data ?? {}
+                ) as CharacterSummary[];
 
-              const lastPlayed = charactersData.sort(
-                (a, b) =>
-                  new Date(b.dateLastPlayed).getTime() -
-                  new Date(a.dateLastPlayed).getTime()
-              )[0];
+                const lastPlayed = charactersData.sort(
+                  (a, b) =>
+                    new Date(b.dateLastPlayed).getTime() -
+                    new Date(a.dateLastPlayed).getTime()
+                )[0];
 
-              const emblemPath = lastPlayed?.emblemPath ?? primary.iconPath;
+                const emblemPath = lastPlayed?.emblemPath ?? primary.iconPath;
 
-              return {
-                displayName,
-                displayTag,
-                membershipId: primary.membershipId,
-                membershipType: primary.membershipType,
-                emblemPath: `https://www.bungie.net${emblemPath}`,
-                lastPlayed: lastPlayed?.dateLastPlayed ?? "",
-              };
-            } catch {
-              return {
-                displayName,
-                displayTag,
-                membershipId: primary.membershipId,
-                membershipType: primary.membershipType,
-                emblemPath: `https://www.bungie.net${primary.iconPath}`,
-                lastPlayed: "",
-              };
+                return {
+                  displayName,
+                  displayTag,
+                  membershipId: primary.membershipId,
+                  membershipType: primary.membershipType,
+                  emblemPath: `https://www.bungie.net${emblemPath}`,
+                  lastPlayed: lastPlayed?.dateLastPlayed ?? "",
+                };
+              } catch {
+                return {
+                  displayName,
+                  displayTag,
+                  membershipId: primary.membershipId,
+                  membershipType: primary.membershipType,
+                  emblemPath: `https://www.bungie.net${primary.iconPath}`,
+                  lastPlayed: "",
+                };
+              }
             }
-          })
+          )
         );
 
         setOptions(found.filter(Boolean));
@@ -151,7 +170,6 @@ const PlayerSearchAutocomplete = ({
         if (!axios.isCancel(err)) console.error("Search error:", err);
       } finally {
         setShowSkeleton(false);
-        setLoading(false);
       }
     };
   }, []);

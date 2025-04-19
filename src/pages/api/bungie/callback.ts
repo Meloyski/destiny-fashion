@@ -12,7 +12,7 @@ export default async function handler(
     return res.status(400).json({ error: "Missing Bungie auth code" });
   }
 
-  const { clientId, clientSecret, redirectUri } = getBungieConfig();
+  const { clientId, clientSecret } = getBungieConfig();
 
   if (!clientId || !clientSecret) {
     return res
@@ -43,10 +43,11 @@ export default async function handler(
 
     // Redirect to dashboard with safe URL-encoded token
     res.redirect(`/dashboard?access_token=${encodeURIComponent(access_token)}`);
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: unknown }; message?: string };
     console.error(
       "❌ Bungie token exchange failed:",
-      err.response?.data ?? err.message
+      error.response?.data ?? error.message ?? err
     );
     return res
       .status(500)

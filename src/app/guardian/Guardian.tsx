@@ -69,6 +69,15 @@ const GENDERS: Record<number, string> = {
   1: "Female",
 };
 
+type CharacterData = {
+  emblemHash: number;
+  classType: number;
+  light: number;
+  emblemBackgroundPath: string;
+  raceType: number;
+  genderType: number;
+};
+
 const GuardianPage = () => {
   const searchParams = useSearchParams();
   const membershipId = searchParams?.get("membershipId") ?? "";
@@ -105,13 +114,18 @@ const GuardianPage = () => {
 
         for (const [id, data] of Object.entries(characters) as [
           string,
-          any
+          CharacterData
         ][]) {
           const emblemDef = await getItemDefinition(data.emblemHash);
 
           const className = CLASS_HASHES[data.classType];
           const light = data.light;
           const emblem = `https://www.bungie.net${data.emblemBackgroundPath}`;
+
+          if (!emblemDef) {
+            console.warn("⚠️ Emblem definition not found for", data.emblemHash);
+            continue; // Skip this character if emblemDef is missing
+          }
           const overlay = `https://www.bungie.net${
             emblemDef.secondaryOverlay ?? ""
           }`;

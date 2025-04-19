@@ -1,7 +1,22 @@
 import axios from "axios";
 import { getBungieApiKey } from "./bungie";
 
-let itemDefs: Record<string, any> | null = null;
+type DestinyItemDefinition = {
+  displayProperties?: {
+    name?: string;
+    icon?: string;
+  };
+  itemTypeDisplayName?: string;
+  plug?: {
+    plugCategoryIdentifier?: string;
+  };
+  inventory?: {
+    tierType?: number;
+  };
+  [key: string]: unknown; // catch-all for unknown structure
+};
+
+let itemDefs: Record<string, DestinyItemDefinition> | null = null;
 
 export const loadManifest = async () => {
   if (itemDefs) return;
@@ -39,7 +54,7 @@ export const loadManifest = async () => {
 
 export const getItemDefinition = async (
   itemHash: number
-): Promise<any | null> => {
+): Promise<DestinyItemDefinition | null> => {
   await loadManifest();
   const key = String(itemHash);
   const def = itemDefs?.[key];
@@ -51,7 +66,9 @@ export const getItemDefinition = async (
   return def ?? null;
 };
 
-export const getSocketPlug = async (plugHash: number): Promise<any | null> => {
+export const getSocketPlug = async (
+  plugHash: number
+): Promise<DestinyItemDefinition | null> => {
   await loadManifest();
   const key = String(plugHash);
   const plug = itemDefs?.[key];
