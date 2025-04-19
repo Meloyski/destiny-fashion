@@ -93,10 +93,12 @@ const GuardianPage = () => {
       setLoading(true);
 
       try {
-        const res = await axios.get(
-          `https://www.bungie.net/Platform/Destiny2/${membershipType}/Profile/${membershipId}/?components=100,200,205,300,305`,
-          { headers: { "X-API-Key": getBungieApiKey() } }
-        );
+        const res = await axios.get(`/api/getProfile`, {
+          params: {
+            membershipId,
+            membershipType,
+          },
+        });
 
         const characters = res.data.Response.characters.data;
         const equipped = res.data.Response.characterEquipment.data;
