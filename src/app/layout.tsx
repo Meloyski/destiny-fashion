@@ -5,6 +5,7 @@ import theme from "@/theme";
 import { DM_Sans } from "next/font/google";
 
 import { loadManifest } from "@/lib/manifestCache";
+import { Analytics } from "@vercel/analytics/next";
 
 loadManifest()
   .then(() => console.log("✅ Manifest preloaded"))
@@ -28,6 +29,7 @@ const RootLayout = ({ children }: RootLayoutProps) => {
           <CssBaseline />
           {children}
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
