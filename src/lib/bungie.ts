@@ -4,4 +4,6 @@ export const getBungieConfig = () => ({
   redirectUri: process.env.BUNGIE_REDIRECT_URI,
 });
 
-export const getBungieApiKey = () => process.env.NEXT_PUBLIC_BUNGIE_API_KEY;
+// Prefer the server-only key, but fall back to NEXT_PUBLIC for backwards compatibility.
+export const getBungieApiKey = () =>
+  process.env.BUNGIE_API_KEY || process.env.NEXT_PUBLIC_BUNGIE_API_KEY;

@@ -1,11 +1,11 @@
 "use client";
 
-import { CssBaseline, ThemeProvider } from "@mui/material";
-import theme from "@/theme";
+import { ColorModeProvider } from "@/theme/ColorModeContext";
 import { DM_Sans } from "next/font/google";
 
 import { loadManifest } from "@/lib/manifestCache";
 import { Analytics } from "@vercel/analytics/next";
+import NavBar from "@/components/NavBar";
 
 loadManifest()
   .then(() => console.log("✅ Manifest preloaded"))
@@ -25,10 +25,10 @@ const RootLayout = ({ children }: RootLayoutProps) => {
   return (
     <html lang="en">
       <body className={dmSans.className}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
+        <ColorModeProvider>
+          <NavBar />
           {children}
-        </ThemeProvider>
+        </ColorModeProvider>
         <Analytics />
       </body>
     </html>

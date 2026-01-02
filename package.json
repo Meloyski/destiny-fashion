@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "dev:local": "concurrently \"next dev\" \"ngrok http --url=on-pheasant-seriously.ngrok-free.app 3000\"",
     "local": "ngrok http --url=on-pheasant-seriously.ngrok-free.app 3000",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint"
   },
@@ -17,7 +17,7 @@
     "@mui/material": "^7.0.0",
     "@vercel/analytics": "^1.5.0",
     "axios": "^1.8.4",
-    "next": "15.2.4",
+    "next": "^16.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

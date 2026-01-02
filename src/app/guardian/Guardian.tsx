@@ -234,44 +234,175 @@ const GuardianPage = () => {
   }, [membershipId, membershipType]);
 
   return (
-    <>
-      <Container maxWidth="xs" sx={{ mt: 6 }}>
-        <Logo />
-        <PlayerSearchAutocomplete />
-      </Container>
-      <Container maxWidth="lg">
-        <Typography variant="h4" gutterBottom>
-          Guardian Loadout
-        </Typography>
+    <Container maxWidth="lg">
+      <Typography variant="h4" gutterBottom>
+        Guardian Loadout
+      </Typography>
 
-        {loading ? (
-          <Grid container spacing={3}>
-            {[...Array(3)].map((_, i) => (
-              <Grid key={i} size={{ xs: 12, md: 4 }}>
+      {loading ? (
+        <Grid container spacing={3}>
+          {[...Array(3)].map((_, i) => (
+            <Grid key={i} size={{ xs: 12, md: 4 }}>
+              <Card variant="outlined">
+                <CardContent sx={{ padding: 0 }}>
+                  <Skeleton variant="rectangular" width="100%" height={64} />
+                  <Stack
+                    spacing={3}
+                    mt={6}
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    {[...Array(5)].map((_, j) => (
+                      <Stack key={j} spacing={1} sx={{ width: "100%", px: 4 }}>
+                        <Box display="flex" alignItems="center" gap={2}>
+                          <Skeleton variant="rounded" width={64} height={64} />
+                          <Box sx={{ flex: 1 }}>
+                            <Skeleton width="80%" height={24} />
+                            <Skeleton width="60%" height={18} />
+                          </Box>
+                        </Box>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <Grid container spacing={3}>
+          {characterArmor.map(
+            ({ className, armor, special, overlay, light, raceGender }) => (
+              <Grid key={className} size={{ xs: 12, md: 4 }}>
                 <Card variant="outlined">
                   <CardContent sx={{ padding: 0 }}>
-                    <Skeleton variant="rectangular" width="100%" height={64} />
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      gap={2}
+                      sx={{
+                        backgroundImage: `url(${special})`,
+                        backgroundSize: "cover",
+                        height: 64,
+                        px: 2,
+                      }}
+                    >
+                      <Box>
+                        <Box
+                          component="img"
+                          src={overlay}
+                          alt="overlay"
+                          height={60}
+                          sx={{ position: "relative", top: 24 }}
+                        />
+                      </Box>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        flex={1}
+                        sx={{ px: 1 }}
+                      >
+                        <Stack>
+                          <Typography
+                            variant="h5"
+                            sx={{
+                              fontWeight: 500,
+                              fontSize: 26,
+                              lineHeight: 1,
+                            }}
+                          >
+                            {className}
+                          </Typography>
+                          <Typography color="textSecondary" variant="body2">
+                            {raceGender}
+                          </Typography>
+                        </Stack>
+                        <Stack direction="row" alignItems="center">
+                          <Box
+                            sx={{
+                              position: "relative",
+                              top: -7,
+                              right: 1,
+                              fontWeight: 900,
+                            }}
+                          >
+                            ⟡
+                          </Box>
+                          <Typography
+                            variant="h5"
+                            sx={{ fontWeight: 700, mb: 0.25 }}
+                          >
+                            {light}
+                          </Typography>
+                        </Stack>
+                      </Stack>
+                    </Stack>
+
                     <Stack
                       spacing={3}
                       mt={6}
                       alignItems="center"
                       justifyContent="center"
                     >
-                      {[...Array(5)].map((_, j) => (
+                      {armor.map((item) => (
                         <Stack
-                          key={j}
+                          key={item.itemInstanceId}
                           spacing={1}
                           sx={{ width: "100%", px: 4 }}
                         >
                           <Box display="flex" alignItems="center" gap={2}>
-                            <Skeleton
+                            <Avatar
                               variant="rounded"
-                              width={64}
-                              height={64}
+                              src={item.icon}
+                              alt={item.name}
+                              sx={{ width: 64, height: 64 }}
                             />
-                            <Box sx={{ flex: 1 }}>
-                              <Skeleton width="80%" height={24} />
-                              <Skeleton width="60%" height={18} />
+                            <Box>
+                              <Stack gap={0.5} mb={1}>
+                                {item.tier === 6 ? (
+                                  <>
+                                    <Typography
+                                      variant="body1"
+                                      sx={{ fontWeight: 700, lineHeight: 1 }}
+                                    >
+                                      {item.baseName ?? item.name}
+                                    </Typography>
+                                    {item.ornamentName && item.baseName && (
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                        sx={{ lineHeight: 1 }}
+                                      >
+                                        {item.name}
+                                      </Typography>
+                                    )}
+                                  </>
+                                ) : (
+                                  <Typography
+                                    variant="body1"
+                                    sx={{ fontWeight: 700, lineHeight: 1 }}
+                                  >
+                                    {item.name}
+                                  </Typography>
+                                )}
+                              </Stack>
+                              {item.shaderName && (
+                                <Box display="flex" alignItems="center" gap={1}>
+                                  <Avatar
+                                    src={item.shaderIcon ?? ""}
+                                    alt={item.shaderName}
+                                    sx={{ width: 14, height: 14 }}
+                                    variant="square"
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: 12 }}
+                                  >
+                                    {item.shaderName}
+                                  </Typography>
+                                </Box>
+                              )}
                             </Box>
                           </Box>
                         </Stack>
@@ -280,160 +411,11 @@ const GuardianPage = () => {
                   </CardContent>
                 </Card>
               </Grid>
-            ))}
-          </Grid>
-        ) : (
-          <Grid container spacing={3}>
-            {characterArmor.map(
-              ({ className, armor, special, overlay, light, raceGender }) => (
-                <Grid key={className} size={{ xs: 12, md: 4 }}>
-                  <Card variant="outlined">
-                    <CardContent sx={{ padding: 0 }}>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        gap={2}
-                        sx={{
-                          backgroundImage: `url(${special})`,
-                          backgroundSize: "cover",
-                          height: 64,
-                          px: 2,
-                        }}
-                      >
-                        <Box>
-                          <Box
-                            component="img"
-                            src={overlay}
-                            alt="overlay"
-                            height={60}
-                            sx={{ position: "relative", top: 24 }}
-                          />
-                        </Box>
-                        <Stack
-                          direction="row"
-                          alignItems="center"
-                          justifyContent="space-between"
-                          flex={1}
-                          sx={{ px: 1 }}
-                        >
-                          <Stack>
-                            <Typography
-                              variant="h5"
-                              sx={{
-                                fontWeight: 500,
-                                fontSize: 26,
-                                lineHeight: 1,
-                              }}
-                            >
-                              {className}
-                            </Typography>
-                            <Typography color="textSecondary" variant="body2">
-                              {raceGender}
-                            </Typography>
-                          </Stack>
-                          <Stack direction="row" alignItems="center">
-                            <Box
-                              sx={{
-                                position: "relative",
-                                top: -7,
-                                right: 1,
-                                fontWeight: 900,
-                              }}
-                            >
-                              ⟡
-                            </Box>
-                            <Typography
-                              variant="h5"
-                              sx={{ fontWeight: 700, mb: 0.25 }}
-                            >
-                              {light}
-                            </Typography>
-                          </Stack>
-                        </Stack>
-                      </Stack>
-
-                      <Stack
-                        spacing={3}
-                        mt={6}
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        {armor.map((item) => (
-                          <Stack
-                            key={item.itemInstanceId}
-                            spacing={1}
-                            sx={{ width: "100%", px: 4 }}
-                          >
-                            <Box display="flex" alignItems="center" gap={2}>
-                              <Avatar
-                                variant="rounded"
-                                src={item.icon}
-                                alt={item.name}
-                                sx={{ width: 64, height: 64 }}
-                              />
-                              <Box>
-                                <Stack gap={0.5} mb={1}>
-                                  {item.tier === 6 ? (
-                                    <>
-                                      <Typography
-                                        variant="body1"
-                                        sx={{ fontWeight: 700, lineHeight: 1 }}
-                                      >
-                                        {item.baseName ?? item.name}
-                                      </Typography>
-                                      {item.ornamentName && item.baseName && (
-                                        <Typography
-                                          variant="body2"
-                                          color="text.secondary"
-                                          sx={{ lineHeight: 1 }}
-                                        >
-                                          {item.name}
-                                        </Typography>
-                                      )}
-                                    </>
-                                  ) : (
-                                    <Typography
-                                      variant="body1"
-                                      sx={{ fontWeight: 700, lineHeight: 1 }}
-                                    >
-                                      {item.name}
-                                    </Typography>
-                                  )}
-                                </Stack>
-                                {item.shaderName && (
-                                  <Box
-                                    display="flex"
-                                    alignItems="center"
-                                    gap={1}
-                                  >
-                                    <Avatar
-                                      src={item.shaderIcon ?? ""}
-                                      alt={item.shaderName}
-                                      sx={{ width: 14, height: 14 }}
-                                      variant="square"
-                                    />
-                                    <Typography
-                                      variant="body2"
-                                      sx={{ fontSize: 12 }}
-                                    >
-                                      {item.shaderName}
-                                    </Typography>
-                                  </Box>
-                                )}
-                              </Box>
-                            </Box>
-                          </Stack>
-                        ))}
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              )
-            )}
-          </Grid>
-        )}
-      </Container>
-    </>
+            )
+          )}
+        </Grid>
+      )}
+    </Container>
   );
 };
 

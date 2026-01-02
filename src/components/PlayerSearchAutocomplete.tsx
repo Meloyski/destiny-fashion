@@ -14,7 +14,6 @@ import {
   Paper,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import axios, { CancelTokenSource } from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getBungieApiKey } from "@/lib/bungie";
@@ -86,29 +85,26 @@ const PlayerSearchAutocomplete = ({
         if (cancelToken) cancelToken.cancel();
         cancelToken = axios.CancelToken.source();
 
+        // Always send { query: inputValue }
         const res = await axios.post("/api/searchGuardian", { query });
 
-        const users = res.data.Response.searchResults;
+        const users =
+          (Array.isArray(res.data?.results) && res.data.results) || [];
 
         const found = await Promise.all(
           users.map(
             async (user: {
-              destinyMemberships: DestinyMembership[];
-              bungieGlobalDisplayName?: string;
-              bungieGlobalDisplayNameCode?: number;
-              iconPath?: string;
+              displayName: string;
+              displayNameCode: number;
+              memberships: DestinyMembership[];
             }): Promise<GuardianOption | null> => {
-              const primary =
-                user.destinyMemberships.find(
-                  (m: DestinyMembership) => m.isCrossSavePrimary === true
-                ) ?? user.destinyMemberships[0];
+              const primary = user.memberships[0];
 
               if (!primary) return null;
 
-              const baseName = user.bungieGlobalDisplayName ?? "Unknown";
+              const baseName = user.displayName ?? "Unknown";
               const displayTag = `#${
-                user.bungieGlobalDisplayNameCode?.toString().padStart(4, "0") ??
-                "0000"
+                user.displayNameCode?.toString().padStart(4, "0") ?? "0000"
               }`;
               const displayName = `${baseName}${displayTag}`;
 
@@ -138,12 +134,15 @@ const PlayerSearchAutocomplete = ({
                   lastPlayed: lastPlayed?.dateLastPlayed ?? "",
                 };
               } catch {
+                const fallbackEmblem = primary.iconPath
+                  ? `https://www.bungie.net${primary.iconPath}`
+                  : "";
                 return {
                   displayName,
                   displayTag,
                   membershipId: primary.membershipId,
                   membershipType: primary.membershipType,
-                  emblemPath: `https://www.bungie.net${primary.iconPath}`,
+                  emblemPath: fallbackEmblem,
                   lastPlayed: "",
                 };
               }
@@ -153,7 +152,11 @@ const PlayerSearchAutocomplete = ({
 
         setOptions(found.filter((u): u is GuardianOption => Boolean(u)));
       } catch (err) {
-        if (!axios.isCancel(err)) console.error("Search error:", err);
+        if (axios.isAxiosError(err) && err.response?.status === 404) {
+          setOptions([]);
+        } else if (!axios.isCancel(err)) {
+          console.error("Search error:", err);
+        }
       } finally {
         setShowSkeleton(false);
       }
@@ -241,6 +244,7 @@ const PlayerSearchAutocomplete = ({
   return (
     <Autocomplete<GuardianOption>
       open={open}
+      size="small"
       onOpen={() => setOpen(true)}
       onClose={() => setOpen(false)}
       options={showSkeleton ? skeletonOptions : options}
@@ -258,10 +262,10 @@ const PlayerSearchAutocomplete = ({
       }}
       noOptionsText={
         inputValue.length < 3
-          ? "Start typing a Bungie ID"
+          ? "Start typing a Bungie Name or Tag (e.g. Meloyski#5718)"
           : showSkeleton
           ? ""
-          : "No Guardians found"
+          : "No Guardians found. Try including their tag for an exact match (e.g. Meloyski#5718)."
       }
       isOptionEqualToValue={(option, value) =>
         option.membershipId === value.membershipId &&
@@ -331,7 +335,7 @@ const PlayerSearchAutocomplete = ({
       renderInput={(params) => (
         <TextField
           {...params}
-          placeholder="Lookup a Guardian..."
+          placeholder="Lookup a Guardian (name or name#tag)"
           sx={{
             "& .MuiOutlinedInput-root": {
               paddingRight: `9px!important`,
@@ -344,19 +348,12 @@ const PlayerSearchAutocomplete = ({
                 <SearchIcon fontSize="small" sx={{ color: "text.secondary" }} />
               </Box>
             ),
-            endAdornment: (
-              <Box sx={{ pr: 1, display: "flex", alignItems: "center" }}>
-                <KeyboardArrowDownIcon
-                  fontSize="small"
-                  sx={{
-                    color: "text.secondary",
-                    transition: "transform 0.3s ease",
-                    transform: open ? "rotate(180deg)" : "rotate(0deg)",
-                  }}
-                />
-              </Box>
-            ),
           }}
+          helperText={
+            inputValue.length < 3
+              ? "Enter at least 3 characters. Use #tag for an exact match (e.g. Meloyski#5718)."
+              : undefined
+          }
         />
       )}
     />
