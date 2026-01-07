@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "dev:local": "concurrently \"next dev\" \"ngrok http --url=on-pheasant-seriously.ngrok-free.app 3000\"",
+    "dev:local": "concurrently \"NEXT_WEBPACK_HMR_SOCKET_HOSTNAME=on-pheasant-seriously.ngrok-free.app NEXT_WEBPACK_HMR_SOCKET_PORT=443 NEXT_WEBPACK_HMR_SOCKET_PROTOCOL=wss next dev --hostname 0.0.0.0 --webpack\" \"ngrok http --url=on-pheasant-seriously.ngrok-free.app 3000\"",
     "local": "ngrok http --url=on-pheasant-seriously.ngrok-free.app 3000",
     "build": "next build --webpack",
     "start": "next start",

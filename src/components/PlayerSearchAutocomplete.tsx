@@ -14,7 +14,7 @@ import {
   Paper,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import axios, { CancelTokenSource } from "axios";
+import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getBungieApiKey } from "@/lib/bungie";
 
@@ -69,10 +69,9 @@ const PlayerSearchAutocomplete = ({
   const [showSkeleton, setShowSkeleton] = useState(false);
   const [open, setOpen] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const searchGuardians = useMemo(() => {
-    let cancelToken: CancelTokenSource | null = null;
-
     return async (query: string) => {
       if (!query || query.length < 3) {
         setOptions([]);
@@ -82,14 +81,66 @@ const PlayerSearchAutocomplete = ({
       setShowSkeleton(true);
 
       try {
-        if (cancelToken) cancelToken.cancel();
-        cancelToken = axios.CancelToken.source();
+        if (abortRef.current) abortRef.current.abort();
+        abortRef.current = new AbortController();
 
         // Always send { query: inputValue }
-        const res = await axios.post("/api/searchGuardian", { query });
+        const res = await axios.post(
+          "/api/searchGuardian",
+          { query },
+          { signal: abortRef.current.signal }
+        );
 
-        const users =
-          (Array.isArray(res.data?.results) && res.data.results) || [];
+        // Prefer our normalized API shape, but fall back to Bungie's raw Response
+        const apiResults = Array.isArray(res.data?.results)
+          ? res.data.results
+          : [];
+
+        const bungieResults = Array.isArray(
+          res.data?.Response?.searchResults
+        )
+          ? res.data.Response.searchResults.map(
+              (r: {
+                bungieGlobalDisplayName: string;
+                bungieGlobalDisplayNameCode: number;
+                destinyMemberships?: Array<{
+                  membershipId: string | number;
+                  membershipType: number | string;
+                  iconPath?: string;
+                  isCrossSavePrimary?: boolean;
+                }>;
+              }) => ({
+                displayName: r.bungieGlobalDisplayName,
+                displayNameCode: r.bungieGlobalDisplayNameCode,
+                memberships: (r.destinyMemberships ?? []).map((m) => ({
+                  membershipId: String(m.membershipId),
+                  membershipType: Number(m.membershipType),
+                  iconPath: m.iconPath,
+                  isCrossSavePrimary: m.isCrossSavePrimary,
+                })),
+              })
+            )
+          : [];
+
+        const normalizedApiResults = apiResults.map((r) => ({
+          ...r,
+          memberships: (r.memberships ?? []).map((m) => ({
+            membershipId: String(m.membershipId),
+            membershipType: Number(m.membershipType),
+            iconPath: m.iconPath,
+            isCrossSavePrimary: m.isCrossSavePrimary,
+          })),
+        }));
+
+        const users = normalizedApiResults.length
+          ? normalizedApiResults
+          : bungieResults;
+
+        if (!users.length) {
+          setOptions([]);
+          setOpen(true);
+          return;
+        }
 
         const found = await Promise.all(
           users.map(
@@ -98,7 +149,9 @@ const PlayerSearchAutocomplete = ({
               displayNameCode: number;
               memberships: DestinyMembership[];
             }): Promise<GuardianOption | null> => {
-              const primary = user.memberships[0];
+              const primary = user.memberships.find(
+                (m) => m.isCrossSavePrimary
+              ) || user.memberships[0];
 
               if (!primary) return null;
 
@@ -151,10 +204,16 @@ const PlayerSearchAutocomplete = ({
         );
 
         setOptions(found.filter((u): u is GuardianOption => Boolean(u)));
+        setOpen(true);
       } catch (err) {
+        const isCanceled =
+          axios.isCancel(err) ||
+          (axios.isAxiosError(err) && err.code === "ERR_CANCELED");
+
         if (axios.isAxiosError(err) && err.response?.status === 404) {
           setOptions([]);
-        } else if (!axios.isCancel(err)) {
+          setOpen(true);
+        } else if (!isCanceled) {
           console.error("Search error:", err);
         }
       } finally {
@@ -252,7 +311,10 @@ const PlayerSearchAutocomplete = ({
       getOptionLabel={(option) => option.displayName}
       value={defaultValue}
       inputValue={inputValue}
-      onInputChange={(_, value) => setInputValue(value)}
+      onInputChange={(_, value) => {
+        setInputValue(value);
+        setOpen(true);
+      }}
       onChange={(_, selected) => {
         const user = selected as GuardianOption;
         if (!user || user.membershipId.includes("skeleton")) return;

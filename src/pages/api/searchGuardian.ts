@@ -97,7 +97,9 @@ export default async function handler(
     }
 
     // 2) Prefix search path (GlobalName)
-    const pagesToFetch = [0, 1, 2];
+    // Bungie returns 10 results per page; grab a few pages to handle common prefixes.
+    const PAGE_COUNT = 5; // up to ~50 results
+    const pagesToFetch = Array.from({ length: PAGE_COUNT }, (_, i) => i);
 
     const pageResponses = await Promise.all(
       pagesToFetch.map((page) =>
@@ -155,11 +157,9 @@ export default async function handler(
     const bungieData = err.response?.data as BungieErrorResponse | undefined;
 
     if (bungieData?.ErrorCode === 217) {
-      // Bungie returns UserCannotResolveCentralAccount when the profile doesn't exist.
-      return res.status(404).json({
-        error: "Guardian not found",
-        detail: bungieData,
-      });
+      // Bungie returns UserCannotResolveCentralAccount when it can't resolve the name.
+      // Treat this as "no results" rather than surfacing a 404 to the UI.
+      return res.status(200).json({ results: [] });
     }
 
     console.error("❌ Bungie Search API failed:", bungieData || err.message);
